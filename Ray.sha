@@ -1,0 +1,236 @@
+//Cg
+
+void vshader( 
+  in uniform float4x4 mat_modelproj, 
+  in float4 vtx_position: POSITION, 
+  out float4 l_position: POSITION,
+  out float4 l_pos) 
+{ 
+  l_pos=vtx_position;  
+  l_position = mul(mat_modelproj, vtx_position);
+} 
+
+float simplex3(in float3 loc, out float3 der, uniform sampler1D vecTex){
+    const int d=3;
+    const float f=0.333333333333;
+    const float g=0.166666666667;
+    const float cornerToFaceSquared=0.703125*.9;
+    const float valueScaler=15.4423881554;
+    const int vecCount=12;
+    
+    const float3 randomizerVec=float3(181.4813,787.7541,1646.2698);
+    
+    float s=(loc.x+loc.y+loc.z)*f;
+    int3 intSkewLoc=floor(loc+s);
+    float t2=(intSkewLoc.x+intSkewLoc.y+intSkewLoc.z)*g;
+    float3 cellDist=loc-intSkewLoc+t2;
+
+    float t=max(0,cornerToFaceSquared-dot(cellDist,cellDist));
+
+    float3 vx=intSkewLoc*randomizerVec;
+    float index=vx.x+vx.y+vx.z;
+    float3 vec=tex1D(vecTex,frac(index/vecCount)).xyz-1.0;
+    float gr=dot(vec,cellDist);
+    float t4=pow(t,4);
+    float n=gr*t4;
+    der=vec*t4-gr*8*pow(t,3)*cellDist;
+
+    float skewOffset=g;
+    float3 c=cellDist;
+    int3 intLoc=intSkewLoc;
+    
+    for (int i=1; i<=d; i++){
+        float m=max(max(c.x,c.y),c.z);
+        /*
+        bool3 b=c>=float3(m);
+        c = b ? -1.0 : c;
+        intLoc=b ? intLoc+1 : intLoc;
+        */
+        if (c.x>=m) {c.x=-1;intLoc.x++;}
+        else if (c.y>=m) {c.y=-1;intLoc.y++;}
+        else{c.z=-1;intLoc.z++;}
+        
+
+        float3 u=cellDist-(intLoc-intSkewLoc)+skewOffset;
+        t=max(0,cornerToFaceSquared-dot(u,u));
+        
+        vx=(intLoc)*randomizerVec;
+        index=vx.x+vx.y+vx.z;
+        vec=tex1D(vecTex,frac(index/vecCount)).xyz-1.0;
+        gr=dot(vec,u);
+        t4=pow(t,4);
+        n+=gr*t4;
+        der+=vec*t4-gr*8*pow(t,3)*u;
+
+        skewOffset+=g;
+    }
+    der*=valueScaler;
+    return n*valueScaler;
+}
+
+
+float4 densityFull(float3 pos, int count, uniform sampler1D vecTex, float threshold){
+  float4 v=float4(0,0,0,0);
+  int i;
+  for (i=0 ; i<count ; i++){
+      float freqScaler=4.0*pow(2.0,i);
+      float3 loc=pos*freqScaler;
+      float3 der;
+      float v2=simplex3(loc,der,vecTex);
+      der*=freqScaler;
+      v+=float4(der*freqScaler,v2-threshold)*.5*pow(.5,i);
+  }
+
+  return v;
+}
+
+
+float3 toWorld(float4x4 camMat, float3 dir, float z){
+return mul(camMat,float4(dir*z,1)).xyz;
+}
+
+void fshader( 
+  in float4 l_pos,
+  in sampler1D tex_0: TEXUNIT0,
+  //uniform float4x4 trans_cam_to_world,
+  
+  //uniform float4x4 wstrans_cam,
+  
+  uniform float4 k_camMat1,
+  uniform float4 k_camMat2,
+  uniform float4 k_camMat3,
+  uniform float4 k_camMat4,
+  uniform float4 k_threshold,
+  
+  out float4 o_color: COLOR) 
+{    
+  float4 c;
+  float3 dir=float3(l_pos.x,1,l_pos.z);
+  
+  vec3 lightSource=vec3(.5,.5,-1);
+  //vec3 camLoc=k_cam.xyz;
+  vec3 groundNorm;
+  
+  //float4x4 m=wstrans_cam;
+  float4x4 m=float4x4(k_camMat1,k_camMat2,k_camMat3,k_camMat4);
+  
+  float t=k_threshold.x;
+  
+  float3 hitPos ; 
+  
+  bool hit=false;
+  
+  int i;
+  const int loopCount=15;
+  
+  const float maxDepth=0.8;
+  
+  const float minDepth=.0;
+  float z=minDepth;
+  
+  float zHit=0;
+  float zMiss=0;
+  float4 zHitVal;
+  float4 zMissVal=densityFull(toWorld(m,dir,0),1,tex_0,t);
+  hit=zMissVal.w>0;
+  
+  
+  float3 checkPos;
+  float4 v;
+  
+  float sampleOffset=pow(minDepth/maxDepth,.5);
+  sampleOffset=sampleOffset*(loopCount/(1-sampleOffset));
+  
+  float zStep=(maxDepth-minDepth)/loopCount;
+  float stepScalar;
+   
+  float vilibility=1;
+  
+  for (i = 0; i <= loopCount; i++){
+    if (!hit){
+        float3 lastPos=checkPos;
+        checkPos=toWorld(m,dir,z);
+        
+        v=densityFull(checkPos,1,tex_0,t);
+        if (v.w>0){
+          hit=true;
+        } else {
+          zMiss=z;
+          zMissVal=v;
+          stepScalar=(-zMissVal.w);
+          z+=stepScalar*.4+(.08+2.0*pow(float(i)/loopCount,3))*zStep;
+        }
+      }
+    }
+    
+    if (!hit){discard;}
+    if (z==0){
+    o_color=float4(1,0,0,1);
+    }else{
+    
+    
+    zHit=z;
+    zHitVal=v;
+    
+    int rloopCount=4;
+    
+    for (i = 1; i <= rloopCount; i++){
+        z=(zHit+zMiss)*.5;
+        checkPos=toWorld(m,dir,z);
+        v=densityFull(checkPos,1,tex_0,t);
+        if ((v.w)>0){
+            zHit=z;
+            zHitVal=v;
+        } else {
+            zMiss=z;
+            zMissVal=v;
+        }
+    }
+    
+    
+    
+
+    
+    
+    float f=zHitVal.w-zMissVal.w;
+    f=-zMissVal.w/f;
+    
+    z=zHit*f+zMiss*(1-f);
+    checkPos=toWorld(m,dir,z);
+    float4 v2=densityFull(checkPos,6,tex_0,t);
+    
+    groundNorm=normalize(v.xyz+v2.xyz*.01);
+    //groundNorm=normalize(-(zHitVal.xyz*f+zMissVal.xyz*(1-f)));
+
+    vilibility=pow(2.718,-5*z);
+    if (!hit){vilibility=0;}
+
+
+    float3 camLoc=toWorld(m,dir,0);
+    lightSource=normalize(lightSource);
+    
+    camLoc=normalize(camLoc.xyz-checkPos.xyz);
+    
+    vec3 hVec=normalize(lightSource + camLoc);
+    
+    //float NdotL=dot(lightSource,groundNorm);
+    //float NdotH=dot(hVec,groundNorm);
+    //vec4 l=lit(  NdotL, NdotH , 200 );
+    float l=(1/(z*z))*.032;
+    
+    l=min(1,l);
+    
+    l=max(0,1-pow(dot(dir.xz,dir.xz),1)*1)*.8*l+l*.2;
+    
+    l*=clamp(dot(-camLoc,groundNorm),0,1);
+    
+    c=float4((length(checkPos-round(checkPos))*3-1)*10,1,.5,1);
+    
+    //c.xyz*=l.y*.9+l.z*0+.1;
+    c.xyz*=l;
+
+    c=lerp(float4(0,0,0,0),c,vilibility);
+  
+    o_color=c;
+    }
+}

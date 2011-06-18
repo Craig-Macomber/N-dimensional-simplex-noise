@@ -1,0 +1,85 @@
+//Cg
+float simplex4(in float4 loc, out float4 der, uniform sampler1D vecTex){
+    const int d=4;
+    const float f=0.309016994375;
+    const float g=0.138196601125;
+    const float cornerToFaceSquared=0.75;
+    const float valueScaler=8.7401214007;
+    const int vecCount=32;
+    
+    float s=(loc.x+loc.y+loc.z+loc.w)*f;
+    int4 intSkewLoc=floor(loc+s);
+    float t2=(intSkewLoc.x+intSkewLoc.y+intSkewLoc.z+intSkewLoc.w)*g;
+    float4 cellDist=loc-intSkewLoc+t2;
+    
+    
+    float4 c=cellDist;
+    
+    int4 intLoc=intSkewLoc; 
+    
+    float n=0.0;
+    float skewOffset=0.0;
+    
+    der=float4(0.0,0.0,0.0,0.0);
+    
+    
+    for (int i=0; i<=4; i++){
+        if (i>0){
+            float2 mv=max(c.xy,c.zw);
+            float m=max(mv.x,mv.y);
+            
+            // If any of the componets of c are equal
+            // This code messes up by getting true twice in b
+            // The code below is slower, but correct.
+            bool4 b=c>=float4(m);
+            c = b ? -1.0 : c;
+            intLoc=b ? intLoc+1 : intLoc;
+            
+            //if (c.x>=m) {c.x=-1;intLoc.x++;}
+            //else if (c.y>=m) {c.y=-1;intLoc.y++;}
+            //else if (c.z>=m) {c.z=-1;intLoc.z++;}
+            //else{c.w=-1;intLoc.w++;}
+        }
+        
+        float4 u=cellDist-(intLoc-intSkewLoc)+skewOffset;
+        float t=cornerToFaceSquared-dot(u,u);
+        if (t>0){
+            float4 vx=(intLoc)*float4(1,7.751,16.298,159.158); //Needs hash
+            float index=vx.x+vx.y+vx.z+vx.w;
+            
+            float4 vec=tex1D(vecTex,frac(index/vecCount))-1.0;
+            float gr=dot(vec,u);
+            float t4=pow(t,4);
+            n+=gr*t4;
+            der+=vec*t4-gr*8*pow(t,3)*u;
+        }
+        skewOffset+=g;
+    }
+    return n*valueScaler;
+}
+
+
+void vshader( 
+  in uniform float4x4 mat_modelproj, 
+  in float4 vtx_position: POSITION, 
+  out float4 l_position: POSITION,
+  out float4 l_pos) 
+{ 
+  l_pos=vtx_position;  
+  l_position = mul(mat_modelproj, vtx_position);
+} 
+
+
+void fshader( 
+  in float4 l_pos,
+  in sampler1D tex_0: TEXUNIT0,
+  out float4 o_color: COLOR) 
+{   
+    float t=0;
+    float4 loc=float4(l_pos.xyz,t)*10.0;
+    float4 der;
+    loc+=float4(0.0,1.251,26.3,7.53);
+    float v=simplex4(loc,der,tex_0);
+    float4 c=float4(v,der.xy,1.0)*.5+.5;
+    o_color=c;
+}

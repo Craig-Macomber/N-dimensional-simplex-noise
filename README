@@ -1,0 +1,7 @@
+The simplex.py file contain a SimplexNoise class with a simplexNoise function. It samples n-dimensional simplex noise!
+
+texMaker is an example of its use to make 3D smooth noise textures, and save them as images.
+
+noisetest does some performance testing of various diminsions.
+
+ray.py is a ray marching based renderer of surfaces made from 3D simplex noise on the GPU. It may fail to run on most computers due to shader compatibility issues.
