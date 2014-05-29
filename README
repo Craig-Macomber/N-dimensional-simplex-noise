@@ -1,7 +1,13 @@
+This project is a collection of scraps of code related to simplex noise. It was made for my own educational purposes, and is not packaged up for general reuse.
+
+Kenneth Perlin, of Perlin Noise fame, filed a patent that seems related to this: US6867776 B2. Given that this code was partly constructed using his work and work clearly based on his as examples, there may be legal issues with trying to actually do anything with this code. I was informed of this after finishing and publishing this project. If you wish to use this code, please figure out the legal implications related to the patent (and any other patents that might somehow be relevant), and let me know how I can safely license it to be most useful.
+
+This project contains a few new ideas, modifications and extensions to previous works. Part of the generalization to N dimensions was by own design, and my gradient vector selection is very different. I derived the derivative math myself, but I assume it's identical. It is not a port of any existing code: it was simply inspired by a few different versions (none of which were n-dimensional).
+
 The simplex.py file contain a SimplexNoise class with a simplexNoise function. It samples n-dimensional simplex noise!
 
 texMaker is an example of its use to make 3D smooth noise textures, and save them as images.
 
-noisetest does some performance testing of various diminsions.
+noisetest does some performance testing of various dimensions.
 
 ray.py is a ray marching based renderer of surfaces made from 3D simplex noise on the GPU. It may fail to run on most computers due to shader compatibility issues.
