@@ -1,4 +1,4 @@
-from pandac.PandaModules import *
+from panda3d.core import *
 
 winSize=600
 
@@ -41,7 +41,7 @@ base.camera.setPos(0.077093, -0.210524, 0.0781958)
 
 base.setBackgroundColor(0,0,0,0)
 
-print base.win.supportsPixelZoom()
+print(base.win.supportsPixelZoom())
 base.win.setPixelZoom(8)
 
 

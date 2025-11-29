@@ -63,12 +63,12 @@ class SimplexNoise():
         # Little helper generator function for making gradient vecs
         # Makes vecs of all -1 or 1, of d dimensions 
         def vf(d):
-            for i in xrange(2 ** d):
-                yield [(i >> n) % 2 * 2 - 1 for n in xrange(d)]
+            for i in range(2 ** d):
+                yield [(i >> n) % 2 * 2 - 1 for n in range(d)]
         
         if self.d>1:
             # inject 0s into vecs from vf to make needed vecs
-            self.vecs=[v[:z] + [0] + v[z:] for z in xrange(self.d) for v in vf(self.d - 1)]
+            self.vecs=[v[:z] + [0] + v[z:] for z in range(self.d) for v in vf(self.d - 1)]
             
             
             # All 1 or -1 version (hypercube corners)
@@ -112,7 +112,7 @@ class SimplexNoise():
         # Perform the skew operation on input space will convert the
         # regular simplexs to right simplexes making up huper-cubes
         
-        ranged=range(self.d)
+        ranged=list(range(self.d))
         
         
         s=sum(loc)*self.f
@@ -206,10 +206,10 @@ class SimplexNoise():
         else:
             return n
 
-from pandac.PandaModules import *    
+from panda3d.core import *    
 class ShaderSimplexNoise(SimplexNoise):
     def __init__(self,seed,dimensions):
-        if dimensions>4 or dimensions<2: print "Invalid Shader Noise Dimensions of "+str(dimensions)
+        if dimensions>4 or dimensions<2: print("Invalid Shader Noise Dimensions of "+str(dimensions))
         SimplexNoise.__init__(self,seed,dimensions)
     def makeVecTex(self):
         vecs=[[min(255,(v+1)*128) for v in vec] for vec in self.vecs]
@@ -256,6 +256,6 @@ def randHash(v):
     
 def sortWith(l1,l2):
     # Sorts l2 using l1
-    pairs = zip(l1,l2)
+    pairs = list(zip(l1,l2))
     pairs.sort()
     return [v[1] for v in pairs]

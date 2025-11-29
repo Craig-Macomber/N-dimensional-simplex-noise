@@ -5,7 +5,7 @@ This seems to fail on some computers. It uses a pretty complex shader to do the 
 """
 
 
-from pandac.PandaModules import *
+from panda3d.core import *
 loadPrcFileData("", "win-size 800 800")
 loadPrcFileData("", "sync-video 0")
 loadPrcFileData("", "basic-shaders-only 0")

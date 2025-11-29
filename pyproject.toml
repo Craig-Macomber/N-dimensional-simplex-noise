@@ -1,0 +1,7 @@
+[project]
+name = "n-dimensional-simplex-noise"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["panda3d==1.10.15", "numpy==2.3.5"]

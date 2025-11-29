@@ -8,7 +8,7 @@ These do not tile seamlessly.
 
 
 from direct.showbase.RandomNumGen import randHash
-from pandac.PandaModules import *
+from panda3d.core import *
 from simplex import SimplexNoise
 from math import *
 from time import time
@@ -24,7 +24,7 @@ def noise3D(sizeX,sizeY,sizeZ,scale):
     p=noiseTex.modifyRamImage()
     for z in range(sizeZ): 
         offset = sizeX * sizeY * z
-        print 'making slice '+str(z)+' of '+str(sizeZ)
+        print('making slice '+str(z)+' of '+str(sizeZ))
         for y in range(sizeY): 
             for x in range(sizeX):
                 index = (offset + sizeX * y + x)*noiseTex.getNumComponents()*noiseTex.getComponentWidth()
@@ -38,12 +38,12 @@ def noise3D(sizeX,sizeY,sizeZ,scale):
     return noiseTex
 
 def make():
-    print "This is going to be somewhat slow. Please wait"
+    print("This is going to be somewhat slow. Please wait")
     #tex=noise3D(512,512,1,64.0)
     tex=noise2D(512,512,8.0)
     tex.write(Filename('pics/noisepic_#.png'), 0, 0, True, False) 
-    print 'done'
-    print time()-t
+    print('done')
+    print(time()-t)
     
     
     
@@ -52,7 +52,7 @@ def noise2D(sizeX,sizeY,scale):
     noiseTex=Texture("NoiseTex")
     noiseTex.setup2dTexture(sizeX,sizeY, Texture.TUnsignedByte, Texture.FRgb)
     p=noiseTex.modifyRamImage()
-    print 'making tex '+str(sizeX)+' by '+str(sizeY)
+    print('making tex '+str(sizeX)+' by '+str(sizeY))
     for y in range(sizeY): 
         for x in range(sizeX):
             index = (sizeX * y + x)*noiseTex.getNumComponents()*noiseTex.getComponentWidth()
@@ -67,7 +67,7 @@ def noise1D(sizeX,scale):
     noiseTex=Texture("NoiseTex")
     noiseTex.setup2dTexture(sizeX,sizeX, Texture.TUnsignedByte, Texture.FRgb)
     p=noiseTex.modifyRamImage()
-    print 'making tex '+str(sizeX)+' by '+str(sizeX)
+    print('making tex '+str(sizeX)+' by '+str(sizeX))
     for y in range(sizeX): 
         v,der=s.simplexNoise([y/scale],True)
         for x in range(sizeX):

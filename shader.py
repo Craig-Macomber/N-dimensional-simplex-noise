@@ -1,4 +1,4 @@
-from pandac.PandaModules import *
+from panda3d.core import *
 loadPrcFileData("", "win-size 800 800")
 loadPrcFileData("", "sync-video 0")
 loadPrcFileData("", "basic-shaders-only 0")
